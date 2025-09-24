@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { materialsApi, unitsApi, activitiesApi } from "../lib/supabase";
+import { materialsApi } from "../lib/supabase";
 
 export default function Material() {
   const [materials, setMaterials] = useState([]);

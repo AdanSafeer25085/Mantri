@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { contractorsApi, activitiesApi } from "../lib/supabase";
+import { contractorsApi } from "../lib/supabase";
 
 export default function Contractors() {
   const [contractors, setContractors] = useState([]);
@@ -83,7 +83,7 @@ export default function Contractors() {
                 <div><span className="font-medium text-gray-600">PAN:</span> {contractor.pan}</div>
                 <div><span className="font-medium text-gray-600">Contact:</span> {contractor.contact}</div>
                 <div><span className="font-medium text-gray-600">Bank:</span> {contractor.bank}</div>
-                <div><span className="font-medium text-gray-600">Account:</span> {contractor.accountNo}</div>
+                <div><span className="font-medium text-gray-600">Account:</span> {contractor.account_no}</div>
                 <div><span className="font-medium text-gray-600">IFSC:</span> {contractor.ifsc}</div>
               </div>
 
@@ -139,7 +139,7 @@ export default function Contractors() {
                     <td className="px-3 xl:px-6 py-3 text-xs xl:text-sm">{contractor.pan}</td>
                     <td className="px-3 xl:px-6 py-3 text-xs xl:text-sm">{contractor.contact}</td>
                     <td className="px-3 xl:px-6 py-3 text-xs xl:text-sm">{contractor.bank}</td>
-                    <td className="px-3 xl:px-6 py-3 text-xs xl:text-sm">{contractor.accountNo}</td>
+                    <td className="px-3 xl:px-6 py-3 text-xs xl:text-sm">{contractor.account_no}</td>
                     <td className="px-3 xl:px-6 py-3 text-xs xl:text-sm">{contractor.ifsc}</td>
                     <td className="px-3 xl:px-6 py-3 text-center flex gap-2 xl:gap-3 justify-center">
                       <button

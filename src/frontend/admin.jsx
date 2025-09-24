@@ -35,7 +35,7 @@ export default function Admin() {
         
         setAdmins(processedAdmins);
       } else {
-        console.error("Failed to load admins:", response.status);
+        console.error("Failed to load admins");
         setAdmins([]);
       }
     } catch (error) {

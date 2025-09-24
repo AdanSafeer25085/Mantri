@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { customersApi, projectsApi } from "../lib/supabase";
+import { customersApi } from "../lib/supabase";
 
 export default function AddCustomer() {
   const location = useLocation();
@@ -9,12 +9,12 @@ export default function AddCustomer() {
   const editId = location.state?.editId;
   const [formData, setFormData] = useState({
     datetime: "",
-    fullName: "",
-    primaryContact: "",
-    secondaryContact: "",
-    aadharNo: "",
+    full_name: "",
+    primary_contact: "",
+    secondary_contact: "",
+    aadhar_no: "",
     address: "",
-    unitNo: "",
+    unit_no: "",
     amount: "",
   });
 
@@ -29,12 +29,12 @@ export default function AddCustomer() {
         if (src) {
           setFormData({
             datetime: src.datetime ? new Date(src.datetime).toISOString().slice(0,16) : "",
-            fullName: src.fullName || "",
-            primaryContact: src.primaryContact || "",
-            secondaryContact: src.secondaryContact || "",
-            aadharNo: src.aadharNo || "",
+            full_name: src.full_name || "",
+            primary_contact: src.primary_contact || "",
+            secondary_contact: src.secondary_contact || "",
+            aadhar_no: src.aadhar_no || "",
             address: src.address || "",
-            unitNo: src.unitNo || "",
+            unit_no: src.unit_no || "",
             amount: src.amount || "",
           });
         }
@@ -54,7 +54,7 @@ export default function AddCustomer() {
     e.preventDefault();
 
     try {
-      const customerData = { ...formData, project: projectId };
+      const customerData = { ...formData, project_id: projectId };
       if (editId) {
         await customersApi.update(editId, customerData);
         setMessage("✅ Customer updated successfully!");
@@ -65,12 +65,12 @@ export default function AddCustomer() {
 
       setFormData({
         datetime: "",
-        fullName: "",
-        primaryContact: "",
-        secondaryContact: "",
-        aadharNo: "",
+        full_name: "",
+        primary_contact: "",
+        secondary_contact: "",
+        aadhar_no: "",
         address: "",
-        unitNo: "",
+        unit_no: "",
         amount: "",
       }); // reset form
       setTimeout(() => navigate("/dashboard/customers", { state: { projectId } }), 800);
@@ -112,8 +112,8 @@ export default function AddCustomer() {
             <label className="block text-sm font-medium text-gray-600 mb-1 sm:mb-2">Full Name</label>
             <input
               type="text"
-              name="fullName"
-              value={formData.fullName}
+              name="full_name"
+              value={formData.full_name}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
@@ -125,8 +125,8 @@ export default function AddCustomer() {
             <label className="block text-sm font-medium text-gray-600 mb-1 sm:mb-2">Primary Contact</label>
             <input
               type="tel"
-              name="primaryContact"
-              value={formData.primaryContact}
+              name="primary_contact"
+              value={formData.primary_contact}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
@@ -138,8 +138,8 @@ export default function AddCustomer() {
             <label className="block text-sm font-medium text-gray-600 mb-1 sm:mb-2">Secondary Contact</label>
             <input
               type="tel"
-              name="secondaryContact"
-              value={formData.secondaryContact}
+              name="secondary_contact"
+              value={formData.secondary_contact}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -150,8 +150,8 @@ export default function AddCustomer() {
             <label className="block text-sm font-medium text-gray-600 mb-1 sm:mb-2">Aadhar No</label>
             <input
               type="text"
-              name="aadharNo"
-              value={formData.aadharNo}
+              name="aadhar_no"
+              value={formData.aadhar_no}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
@@ -176,8 +176,8 @@ export default function AddCustomer() {
             <label className="block text-sm font-medium text-gray-600 mb-1 sm:mb-2">Unit No</label>
             <input
               type="text"
-              name="unitNo"
-              value={formData.unitNo}
+              name="unit_no"
+              value={formData.unit_no}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required

@@ -134,7 +134,7 @@ export default function Vendors() {
                       {vendor.bank}
                     </td>
                     <td className="px-4 lg:px-6 py-3 text-sm lg:text-base">
-                      {vendor.accountNo}
+                      {vendor.account_no}
                     </td>
                     <td className="px-4 lg:px-6 py-3 text-sm lg:text-base">
                       {vendor.ifsc}
@@ -215,7 +215,7 @@ export default function Vendors() {
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600">Account:</span>
                   <span className="text-gray-900">
-                    {vendor.accountNo || "N/A"}
+                    {vendor.account_no || "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between">

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { tasksApi, activitiesApi } from "../lib/supabase";
+import { tasksApi } from "../lib/supabase";
 
 export default function Task() {
   const [tasks, setTasks] = useState([]);

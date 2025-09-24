@@ -4,9 +4,9 @@ import { materialsApi, unitsApi, activitiesApi } from "../lib/supabase";
 
 export default function AddMaterial() {
   const [formData, setFormData] = useState({
-    activity: "",
+    activity_id: "",
     name: "",
-    unit: "",
+    unit_id: "",
     status: "Active",
   });
   const navigate = useNavigate();
@@ -40,9 +40,9 @@ export default function AddMaterial() {
         const src = data?.data || data;
         if (src) {
           setFormData({
-            activity: src.activity?.id || src.activity || "",
+            activity_id: src.activity_id || src.activity?.id || "",
             name: src.name || "",
-            unit: src.unit?.id || src.unit || "",
+            unit_id: src.unit_id || src.unit?.id || "",
             status: src.status || "Active",
           });
         }
@@ -70,7 +70,7 @@ export default function AddMaterial() {
       }
 
       // Reset form
-      setFormData({ activity: "", name: "", unit: "", status: "Active" });
+      setFormData({ activity_id: "", name: "", unit_id: "", status: "Active" });
 
       // Navigate back to materials list
       navigate("/dashboard/material");
@@ -104,8 +104,8 @@ export default function AddMaterial() {
               Activity <span className="text-red-500">*</span>
             </label>
             <select
-              name="activity"
-              value={formData.activity}
+              name="activity_id"
+              value={formData.activity_id}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg
                          focus:outline-none focus:ring-2 focus:ring-[#2044E4]
@@ -145,8 +145,8 @@ export default function AddMaterial() {
               Unit <span className="text-red-500">*</span>
             </label>
             <select
-              name="unit"
-              value={formData.unit}
+              name="unit_id"
+              value={formData.unit_id}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg
                          focus:outline-none focus:ring-2 focus:ring-[#2044E4]

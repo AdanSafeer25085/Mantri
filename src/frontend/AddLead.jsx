@@ -8,16 +8,16 @@ export default function AddLead() {
   const projectId = location.state?.projectId;
   const editId = location.state?.editId;
   const [lead, setLead] = useState({
-    fullName: "",
-    contactNo: "",
-    nextVisit: "",
-    visitDate: "",
+    full_name: "",
+    contact_no: "",
+    next_visit: "",
+    visit_date: "",
     note: "",
-    leadType: "",
-    isConverted: false,
-    aadharNo: "",
+    lead_type: "",
+    is_converted: false,
+    aadhar_no: "",
     address: "",
-    unitNo: "",
+    unit_no: "",
     amount: "",
   });
 
@@ -27,7 +27,7 @@ export default function AddLead() {
   const fetchConvertedLeads = async () => {
     try {
       const data = await leadsApi.getAll();
-      const converted = data.filter(lead => lead.isConverted);
+      const converted = data.filter(lead => lead.is_converted);
       setConvertedLeads(converted);
     } catch (err) {
       console.error("Error fetching converted leads:", err);
@@ -47,16 +47,16 @@ export default function AddLead() {
         const src = data.find(lead => lead.id === editId);
         if (src) {
           setLead({
-            fullName: src.fullName || "",
-            contactNo: src.contactNo || "",
-            nextVisit: src.nextVisit ? src.nextVisit.substring(0,10) : "",
-            visitDate: src.visitDate ? src.visitDate.substring(0,10) : "",
+            full_name: src.full_name || "",
+            contact_no: src.contact_no || "",
+            next_visit: src.next_visit ? src.next_visit.substring(0,10) : "",
+            visit_date: src.visit_date ? src.visit_date.substring(0,10) : "",
             note: src.note || "",
-            leadType: src.leadType || "",
-            isConverted: Boolean(src.isConverted),
-            aadharNo: src.aadharNo || "",
+            lead_type: src.lead_type || "",
+            is_converted: Boolean(src.is_converted),
+            aadhar_no: src.aadhar_no || "",
             address: src.address || "",
-            unitNo: src.unitNo || "",
+            unit_no: src.unit_no || "",
             amount: src.amount || "",
           });
         }
@@ -87,30 +87,30 @@ export default function AddLead() {
       if (editId) {
         await leadsApi.update(editId, leadData);
         alert(`✅ Lead updated successfully!`);
-      } else if (lead.isConverted) {
+      } else if (lead.is_converted) {
         // Convert lead to customer
         await leadsApi.convertToCustomer(leadData);
-        alert(`✅ Lead "${lead.fullName}" converted to Customer successfully!`);
+        alert(`✅ Lead "${lead.full_name}" converted to Customer successfully!`);
       } else {
         await leadsApi.create(leadData);
-        alert(`✅ Lead "${lead.fullName}" added successfully!`);
+        alert(`✅ Lead "${lead.full_name}" added successfully!`);
       }
 
       setLead({
-        fullName: "",
-        contactNo: "",
-        nextVisit: "",
-        visitDate: "",
+        full_name: "",
+        contact_no: "",
+        next_visit: "",
+        visit_date: "",
         note: "",
-        leadType: "",
-        isConverted: false,
-        aadharNo: "",
+        lead_type: "",
+        is_converted: false,
+        aadhar_no: "",
         address: "",
-        unitNo: "",
+        unit_no: "",
         amount: "",
       });
 
-      if (lead.isConverted) fetchConvertedLeads();
+      if (lead.is_converted) fetchConvertedLeads();
       // After save, go back to list
       navigate("/dashboard/leads", { state: { projectId } });
     } catch (error) {
@@ -142,8 +142,8 @@ export default function AddLead() {
             </label>
             <input
               type="text"
-              name="fullName"
-              value={lead.fullName}
+              name="full_name"
+              value={lead.full_name}
               onChange={handleChange}
               required
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -157,8 +157,8 @@ export default function AddLead() {
             </label>
             <input
               type="text"
-              name="contactNo"
-              value={lead.contactNo}
+              name="contact_no"
+              value={lead.contact_no}
               onChange={handleChange}
               required
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -172,8 +172,8 @@ export default function AddLead() {
             </label>
             <input
               type="date"
-              name="visitDate"
-              value={lead.visitDate}
+              name="visit_date"
+              value={lead.visit_date}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -185,8 +185,8 @@ export default function AddLead() {
             </label>
             <input
               type="date"
-              name="nextVisit"
-              value={lead.nextVisit}
+              name="next_visit"
+              value={lead.next_visit}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -212,8 +212,8 @@ export default function AddLead() {
               Lead Type
             </label>
             <select
-              name="leadType"
-              value={lead.leadType}
+              name="lead_type"
+              value={lead.lead_type}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value="">Select Lead Type</option>
@@ -227,8 +227,8 @@ export default function AddLead() {
           <div className="flex items-center space-x-2 sm:col-span-2">
             <input
               type="checkbox"
-              name="isConverted"
-              checked={lead.isConverted}
+              name="is_converted"
+              checked={lead.is_converted}
               onChange={handleChange}
               className="w-4 h-4 border-gray-300 rounded"
             />
@@ -236,7 +236,7 @@ export default function AddLead() {
           </div>
 
           {/* Extra Customer Fields */}
-          {lead.isConverted && (
+          {lead.is_converted && (
             <>
               <div>
                 <label className="block mb-1 sm:mb-2 text-sm font-medium text-gray-600">
@@ -244,8 +244,8 @@ export default function AddLead() {
                 </label>
                 <input
                   type="text"
-                  name="aadharNo"
-                  value={lead.aadharNo}
+                  name="aadhar_no"
+                  value={lead.aadhar_no}
                   onChange={handleChange}
                   required
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -272,8 +272,8 @@ export default function AddLead() {
                 </label>
                 <input
                   type="text"
-                  name="unitNo"
-                  value={lead.unitNo}
+                  name="unit_no"
+                  value={lead.unit_no}
                   onChange={handleChange}
                   required
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -301,7 +301,7 @@ export default function AddLead() {
             <button
               type="submit"
               className="w-full py-2 sm:py-3 text-sm sm:text-base bg-blue-600 text-white rounded-lg font-semibold shadow-md hover:bg-blue-700 transition duration-200">
-              {lead.isConverted ? "Convert to Customer" : "Add Lead"}
+              {lead.is_converted ? "Convert to Customer" : "Add Lead"}
             </button>
           </div>
         </form>
@@ -317,15 +317,15 @@ export default function AddLead() {
             convertedLeads.map((c) => (
               <div key={c.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div><span className="font-medium">Name:</span> {c.fullName}</div>
-                  <div><span className="font-medium">Contact:</span> {c.contactNo}</div>
-                  <div><span className="font-medium">Aadhar:</span> {c.aadharNo}</div>
-                  <div><span className="font-medium">Unit:</span> {c.unitNo}</div>
+                  <div><span className="font-medium">Name:</span> {c.full_name}</div>
+                  <div><span className="font-medium">Contact:</span> {c.contact_no}</div>
+                  <div><span className="font-medium">Aadhar:</span> {c.aadhar_no}</div>
+                  <div><span className="font-medium">Unit:</span> {c.unit_no}</div>
                   <div><span className="font-medium">Amount:</span> {c.amount}</div>
-                  <div><span className="font-medium">Type:</span> {c.leadType}</div>
+                  <div><span className="font-medium">Type:</span> {c.lead_type}</div>
                   <div className="col-span-2"><span className="font-medium">Address:</span> {c.address}</div>
-                  <div><span className="font-medium">Visit:</span> {c.visitDate ? new Date(c.visitDate).toLocaleDateString() : "-"}</div>
-                  <div><span className="font-medium">Next:</span> {c.nextVisit ? new Date(c.nextVisit).toLocaleDateString() : "-"}</div>
+                  <div><span className="font-medium">Visit:</span> {c.visit_date ? new Date(c.visit_date).toLocaleDateString() : "-"}</div>
+                  <div><span className="font-medium">Next:</span> {c.next_visit ? new Date(c.next_visit).toLocaleDateString() : "-"}</div>
                 </div>
               </div>
             ))
@@ -357,35 +357,35 @@ export default function AddLead() {
                 convertedLeads.map((c) => (
                   <tr key={c.id} className="text-center">
                     <td className="border border-gray-300 px-3 py-2 text-sm">
-                      {c.fullName}
+                      {c.full_name}
                     </td>
                     <td className="border border-gray-300 px-3 py-2 text-sm">
-                      {c.contactNo}
+                      {c.contact_no}
                     </td>
                     <td className="border border-gray-300 px-3 py-2 text-sm">
-                      {c.aadharNo}
+                      {c.aadhar_no}
                     </td>
                     <td className="border border-gray-300 px-3 py-2 text-sm">
                       {c.address}
                     </td>
                     <td className="border border-gray-300 px-3 py-2 text-sm">
-                      {c.unitNo}
+                      {c.unit_no}
                     </td>
                     <td className="border border-gray-300 px-3 py-2 text-sm">
                       {c.amount}
                     </td>
                     <td className="border border-gray-300 px-3 py-2 text-sm">
-                      {c.visitDate
-                        ? new Date(c.visitDate).toLocaleDateString()
+                      {c.visit_date
+                        ? new Date(c.visit_date).toLocaleDateString()
                         : "-"}
                     </td>
                     <td className="border border-gray-300 px-3 py-2 text-sm">
-                      {c.nextVisit
-                        ? new Date(c.nextVisit).toLocaleDateString()
+                      {c.next_visit
+                        ? new Date(c.next_visit).toLocaleDateString()
                         : "-"}
                     </td>
                     <td className="border border-gray-300 px-3 py-2 text-sm">
-                      {c.leadType}
+                      {c.lead_type}
                     </td>
                   </tr>
                 ))

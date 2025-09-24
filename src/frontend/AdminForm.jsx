@@ -148,8 +148,12 @@ export default function AdminForm() {
       if (editingAdmin) {
         // Update existing admin
         const adminPayload = {
-          permissions: permissionsArray,
+          position: formData.position,
+          mobile: formData.mobile,
+          status: formData.status,
           role: formData.role,
+          permissions: permissionsArray,
+          plain_password: formData.password
         };
         savedAdmin = await adminsApi.update(editingAdmin.id, adminPayload);
 
@@ -172,7 +176,8 @@ export default function AdminForm() {
           formData.email,
           formData.password,
           formData.username,
-          formData.name
+          formData.name,
+          { status: formData.status === "Inactive" ? "Deactive" : formData.status }
         );
 
         console.log("User created:", savedUser);
@@ -180,8 +185,12 @@ export default function AdminForm() {
         // Then create admin entry
         const adminPayload = {
           user_id: savedUser.id,
-          permissions: permissionsArray,
+          position: formData.position,
+          mobile: formData.mobile,
+          status: formData.status,
           role: formData.role,
+          permissions: permissionsArray,
+          plain_password: formData.password
         };
 
         savedAdmin = await adminsApi.create(adminPayload);

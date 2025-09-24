@@ -11,7 +11,7 @@ import {
   FaRegChartBar,
   FaChevronRight,
 } from "react-icons/fa";
-import { projectsApi, leadsApi, customersApi } from "../lib/supabase";
+import { projectsApi } from "../lib/supabase";
 
 export default function Dashboard() {
   const navigate = useNavigate();

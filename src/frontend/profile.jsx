@@ -122,10 +122,19 @@ export default function Profile() {
     }
 
     setPwdSaving(true);
-    
+
     try {
+      // Get the correct user ID from localStorage
+      const userId = localStorage.getItem("userId") || currentUser?.user_id || currentUser?.id;
+
+      if (!userId) {
+        alert("User session not found. Please login again.");
+        setPwdSaving(false);
+        return;
+      }
+
       // All admin password changes go through Supabase database
-      await authApi.changePassword(currentUser.id, password.current, password.new);
+      await authApi.changePassword(userId, password.current, password.new);
       console.log("Admin password updated via Supabase");
     } catch (error) {
       console.error("Password change error:", error);
@@ -133,7 +142,7 @@ export default function Profile() {
       setPwdSaving(false);
       return;
     }
-    
+
     setTimeout(() => {
       alert("Password changed successfully! Please login again with new credentials.");
       setPassword({ current: "", new: "", confirm: "" });
@@ -312,7 +321,13 @@ export default function Profile() {
 
               // Verify current password through database
               try {
-                await authApi.signIn(currentUser.username, credentials.currentPassword);
+                const usernameToCheck = currentUser?.username || currentUser?.email;
+                if (!usernameToCheck) {
+                  alert("Username not found in session.");
+                  setCredSaving(false);
+                  return;
+                }
+                await authApi.signIn(usernameToCheck, credentials.currentPassword);
               } catch (error) {
                 alert("Current password is incorrect!");
                 setCredSaving(false);

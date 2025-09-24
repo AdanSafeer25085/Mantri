@@ -9,7 +9,7 @@ export default function AddVendor() {
     gst: "",
     contact: "",
     bank: "",
-    accountNo: "",
+    account_no: "",
     ifsc: "",
   });
   const location = useLocation();
@@ -38,7 +38,7 @@ export default function AddVendor() {
         gst: "",
         contact: "",
         bank: "",
-        accountNo: "",
+        account_no: "",
         ifsc: "",
       });
       navigate("/dashboard/vendors");
@@ -60,7 +60,7 @@ export default function AddVendor() {
             gst: src.gst || "",
             contact: src.contact || "",
             bank: src.bank || "",
-            accountNo: src.accountNo || "",
+            account_no: src.account_no || "",
             ifsc: src.ifsc || "",
           });
         }
@@ -133,8 +133,8 @@ export default function AddVendor() {
             <label className="block mb-1 sm:mb-2 text-sm font-medium text-gray-600">Account No.</label>
             <input
               type="text"
-              name="accountNo"
-              value={formData.accountNo}
+              name="account_no"
+              value={formData.account_no}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />

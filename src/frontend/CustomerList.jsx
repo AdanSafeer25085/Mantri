@@ -1,7 +1,7 @@
 // src/frontend/CustomerList.jsx
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { customersApi, projectsApi } from "../lib/supabase";
+import { customersApi } from "../lib/supabase";
 
 export default function CustomerList() {
   const location = useLocation();
@@ -197,8 +197,8 @@ export default function CustomerList() {
                 </td>
                 <td className="px-2 py-3 border text-xs">
                   <div>{c.primary_contact}</div>
-                  {c.secondaryContact && (
-                    <div className="text-gray-500">{c.secondaryContact}</div>
+                  {c.secondary_contact && (
+                    <div className="text-gray-500">{c.secondary_contact}</div>
                   )}
                 </td>
                 <td className="px-2 py-3 border text-xs">{c.unit_no}</td>
@@ -261,10 +261,10 @@ export default function CustomerList() {
                   <span className="text-gray-500">Primary Contact:</span>
                   <span className="text-gray-800 font-medium">{c.primary_contact}</span>
                 </div>
-                {c.secondaryContact && (
+                {c.secondary_contact && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Secondary Contact:</span>
-                    <span className="text-gray-800 font-medium">{c.secondaryContact}</span>
+                    <span className="text-gray-800 font-medium">{c.secondary_contact}</span>
                   </div>
                 )}
                 <div className="flex justify-between">

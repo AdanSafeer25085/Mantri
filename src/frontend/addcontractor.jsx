@@ -4,12 +4,12 @@ import { contractorsApi, activitiesApi } from "../lib/supabase";
 
 export default function AddContractor() {
   const [formData, setFormData] = useState({
-    activity: "",
+    activity_id: "",
     name: "",
     pan: "",
     contact: "",
     bank: "",
-    accountNo: "",
+    account_no: "",
     ifsc: "",
   });
 
@@ -40,12 +40,12 @@ export default function AddContractor() {
         const src = data?.data || data;
         if (src) {
           setFormData({
-            activity: src.activity?.id || src.activity || "",
+            activity_id: src.activity_id || src.activity?.id || "",
             name: src.name || "",
             pan: src.pan || "",
             contact: src.contact || "",
             bank: src.bank || "",
-            accountNo: src.accountNo || "",
+            account_no: src.account_no || "",
             ifsc: src.ifsc || "",
           });
         }
@@ -75,12 +75,12 @@ export default function AddContractor() {
 
       // reset form
       setFormData({
-        activity: "",
+        activity_id: "",
         name: "",
         pan: "",
         contact: "",
         bank: "",
-        accountNo: "",
+        account_no: "",
         ifsc: "",
       });
       navigate("/dashboard/contractors");
@@ -114,8 +114,8 @@ export default function AddContractor() {
               Activity <span className="text-red-500">*</span>
             </label>
             <select
-              name="activity"
-              value={formData.activity}
+              name="activity_id"
+              value={formData.activity_id}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2044E4] focus:border-[#2044E4] transition-colors"
               required
@@ -197,8 +197,8 @@ export default function AddContractor() {
             </label>
             <input
               type="text"
-              name="accountNo"
-              value={formData.accountNo}
+              name="account_no"
+              value={formData.account_no}
               onChange={handleChange}
               placeholder="Enter account number"
               className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2044E4] focus:border-[#2044E4] transition-colors"

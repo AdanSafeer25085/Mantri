@@ -4,9 +4,9 @@ import { projectsApi, stocksApi, materialsApi } from "../lib/supabase";
 
 export default function GanttChart({ projectId: propProjectId, daysFilter: propDaysFilter, minimal = false }) {
   const [projectData, setProjectData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null); // ✅ For modal
-  const [daysFilter, setDaysFilter] = useState(7); // Default to 7 days
+  const [daysFilter] = useState(7); // Default to 7 days
   const location = useLocation();
   const projectId = propProjectId || location.state?.projectId;
 const [stockCheck, setStockCheck] = useState(null); // store stock details
@@ -25,7 +25,7 @@ const [toDate, setToDate] = useState("");
         }
         const data = await projectsApi.getById(projectId);
         setProjectData(data);
-      } catch (err) {
+      } catch (error) {
         setProjectData(null);
       } finally {
         setLoading(false);
