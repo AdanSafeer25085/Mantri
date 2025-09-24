@@ -14,7 +14,6 @@ export default function AdminForm() {
     email: editingAdmin?.email || "",
     mobile: editingAdmin?.mobile || "",
     status: editingAdmin?.status || "Active",
-    role: editingAdmin?.role || "admin",
     username: editingAdmin?.username || "",
     password: editingAdmin?.password || "",
     permissions: editingAdmin?.permissions ?
@@ -22,39 +21,23 @@ export default function AdminForm() {
         newProjects: false,
         finance: false,
         reports: false,
-        projectOverview: false,
         stockManagement: false,
         ganttChart: false,
         technicalFiles: false,
         legalFiles: false,
         customers: false,
         leads: false,
-        materials: false,
-        activities: false,
-        tasks: false,
-        contractors: false,
-        vendors: false,
-        units: false,
-        adminManagement: false,
       }).reduce((acc, key) => {
         const labelMap = {
           newProjects: "New Projects",
           finance: "Finance",
           reports: "Reports",
-          projectOverview: "Project Overview",
           stockManagement: "Stock Management",
           ganttChart: "Gantt Chart",
           technicalFiles: "Technical Files",
           legalFiles: "Legal Files",
           customers: "Customers",
           leads: "Leads",
-          materials: "Materials",
-          activities: "Activities",
-          tasks: "Tasks",
-          contractors: "Contractors",
-          vendors: "Vendors",
-          units: "Units",
-          adminManagement: "Admin Management",
         };
         acc[key] = Array.isArray(editingAdmin.permissions)
           ? editingAdmin.permissions.includes(labelMap[key])
@@ -64,20 +47,12 @@ export default function AdminForm() {
         newProjects: false,
         finance: false,
         reports: false,
-        projectOverview: false,
         stockManagement: false,
         ganttChart: false,
         technicalFiles: false,
         legalFiles: false,
         customers: false,
         leads: false,
-        materials: false,
-        activities: false,
-        tasks: false,
-        contractors: false,
-        vendors: false,
-        units: false,
-        adminManagement: false,
       },
   });
 
@@ -94,27 +69,19 @@ export default function AdminForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     console.log("Form submitted with data:", formData);
 
     const labelMap = {
       newProjects: "New Projects",
       finance: "Finance",
       reports: "Reports",
-      projectOverview: "Project Overview",
       stockManagement: "Stock Management",
       ganttChart: "Gantt Chart",
       technicalFiles: "Technical Files",
       legalFiles: "Legal Files",
       customers: "Customers",
       leads: "Leads",
-      materials: "Materials",
-      activities: "Activities",
-      tasks: "Tasks",
-      contractors: "Contractors",
-      vendors: "Vendors",
-      units: "Units",
-      adminManagement: "Admin Management",
     };
 
     const permissionsArray = Object.entries(formData.permissions)
@@ -136,26 +103,20 @@ export default function AdminForm() {
       createdAt: editingAdmin?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-    
+
     console.log("New admin object:", newAdmin);
 
     try {
-      console.log("Saving admin to database:", formData);
-
-      let savedUser;
-      let savedAdmin;
-
       if (editingAdmin) {
         // Update existing admin
         const adminPayload = {
           position: formData.position,
           mobile: formData.mobile,
           status: formData.status,
-          role: formData.role,
           permissions: permissionsArray,
           plain_password: formData.password
         };
-        savedAdmin = await adminsApi.update(editingAdmin.id, adminPayload);
+        await adminsApi.update(editingAdmin.id, adminPayload);
 
         // Also update user info if needed
         const userPayload = {
@@ -172,7 +133,7 @@ export default function AdminForm() {
         await authApi.updateProfile(editingAdmin.user_id, userPayload);
       } else {
         // Create new user first
-        savedUser = await authApi.signUp(
+        const savedUser = await authApi.signUp(
           formData.email,
           formData.password,
           formData.username,
@@ -188,15 +149,14 @@ export default function AdminForm() {
           position: formData.position,
           mobile: formData.mobile,
           status: formData.status,
-          role: formData.role,
           permissions: permissionsArray,
           plain_password: formData.password
         };
 
-        savedAdmin = await adminsApi.create(adminPayload);
+        await adminsApi.create(adminPayload);
       }
 
-      console.log("Admin saved successfully:", savedAdmin);
+      console.log("Admin saved successfully!");
 
       alert("Admin saved successfully to database!");
       navigate("/dashboard/admin");
@@ -262,17 +222,6 @@ export default function AdminForm() {
           >
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
-          </select>
-
-          <select
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-          >
-            <option value="admin">Admin</option>
-            <option value="main_admin">Main Admin</option>
-            <option value="sub_admin">Sub Admin</option>
           </select>
 
           <input

@@ -4,12 +4,12 @@ import { contractorsApi, activitiesApi } from "../lib/supabase";
 
 export default function AddContractor() {
   const [formData, setFormData] = useState({
-    activity_id: "",
+    activity: "",
     name: "",
     pan: "",
     contact: "",
     bank: "",
-    account_no: "",
+    accountNo: "",
     ifsc: "",
   });
 
@@ -40,12 +40,12 @@ export default function AddContractor() {
         const src = data?.data || data;
         if (src) {
           setFormData({
-            activity_id: src.activity_id || src.activity?.id || "",
+            activity: src.activity?._id || src.activity || "",
             name: src.name || "",
             pan: src.pan || "",
             contact: src.contact || "",
             bank: src.bank || "",
-            account_no: src.account_no || "",
+            accountNo: src.accountNo || "",
             ifsc: src.ifsc || "",
           });
         }
@@ -64,23 +64,35 @@ export default function AddContractor() {
   // 🔹 Submit Form (POST to API)
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Transform form data to match database schema
+    const apiData = {
+      name: formData.name,
+      pan: formData.pan,
+      contact: formData.contact,
+      bank: formData.bank,
+      ifsc: formData.ifsc,
+      activity_id: formData.activity,
+      account_no: formData.accountNo,
+    };
+
     try {
       if (editId) {
-        await contractorsApi.update(editId, formData);
+        await contractorsApi.update(editId, apiData);
         alert("Contractor updated successfully!");
       } else {
-        await contractorsApi.create(formData);
+        await contractorsApi.create(apiData);
         alert("Contractor added successfully!");
       }
 
       // reset form
       setFormData({
-        activity_id: "",
+        activity: "",
         name: "",
         pan: "",
         contact: "",
         bank: "",
-        account_no: "",
+        accountNo: "",
         ifsc: "",
       });
       navigate("/dashboard/contractors");
@@ -114,8 +126,8 @@ export default function AddContractor() {
               Activity <span className="text-red-500">*</span>
             </label>
             <select
-              name="activity_id"
-              value={formData.activity_id}
+              name="activity"
+              value={formData.activity}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2044E4] focus:border-[#2044E4] transition-colors"
               required
@@ -197,8 +209,8 @@ export default function AddContractor() {
             </label>
             <input
               type="text"
-              name="account_no"
-              value={formData.account_no}
+              name="accountNo"
+              value={formData.accountNo}
               onChange={handleChange}
               placeholder="Enter account number"
               className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2044E4] focus:border-[#2044E4] transition-colors"

@@ -4,9 +4,9 @@ import { materialsApi, unitsApi, activitiesApi } from "../lib/supabase";
 
 export default function AddMaterial() {
   const [formData, setFormData] = useState({
-    activity_id: "",
+    activity: "",
     name: "",
-    unit_id: "",
+    unit: "",
     status: "Active",
   });
   const navigate = useNavigate();
@@ -40,9 +40,9 @@ export default function AddMaterial() {
         const src = data?.data || data;
         if (src) {
           setFormData({
-            activity_id: src.activity_id || src.activity?.id || "",
+            activity: src.activity?._id || src.activity || "",
             name: src.name || "",
-            unit_id: src.unit_id || src.unit?.id || "",
+            unit: src.unit?._id || src.unit || "",
             status: src.status || "Active",
           });
         }
@@ -60,17 +60,25 @@ export default function AddMaterial() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Transform form data to match database schema
+    const apiData = {
+      name: formData.name,
+      status: formData.status,
+      activity_id: formData.activity,
+      unit_id: formData.unit,
+    };
+
     try {
       if (editId) {
-        await materialsApi.update(editId, formData);
+        await materialsApi.update(editId, apiData);
         alert("Material updated successfully!");
       } else {
-        await materialsApi.create(formData);
+        await materialsApi.create(apiData);
         alert("Material added successfully!");
       }
 
       // Reset form
-      setFormData({ activity_id: "", name: "", unit_id: "", status: "Active" });
+      setFormData({ activity: "", name: "", unit: "", status: "Active" });
 
       // Navigate back to materials list
       navigate("/dashboard/material");
@@ -104,8 +112,8 @@ export default function AddMaterial() {
               Activity <span className="text-red-500">*</span>
             </label>
             <select
-              name="activity_id"
-              value={formData.activity_id}
+              name="activity"
+              value={formData.activity}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg
                          focus:outline-none focus:ring-2 focus:ring-[#2044E4]
@@ -145,8 +153,8 @@ export default function AddMaterial() {
               Unit <span className="text-red-500">*</span>
             </label>
             <select
-              name="unit_id"
-              value={formData.unit_id}
+              name="unit"
+              value={formData.unit}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg
                          focus:outline-none focus:ring-2 focus:ring-[#2044E4]
