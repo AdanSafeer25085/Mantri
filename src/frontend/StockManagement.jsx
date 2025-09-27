@@ -7,8 +7,9 @@ export default function StockManagement() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Use projectName instead of projectId
-  const projectName = location.state?.projectName;
+  // ✅ Get both projectId and projectName from navigation
+  const projectId = location.state?.projectId || location.state?.project?.id;
+  const projectName = location.state?.projectName || location.state?.project?.name;
 
   const handlePrintPDF = () => {
     window.print();
@@ -68,10 +69,11 @@ export default function StockManagement() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        // Pass projectId to filter data by project
         const [materials, contractors, vendors] = await Promise.all([
-          materialsApi.getAll(),
-          contractorsApi.getAll(),
-          vendorsApi.getAll(),
+          materialsApi.getAll(projectId),
+          contractorsApi.getAll(projectId),
+          vendorsApi.getAll(projectId),
         ]);
 
         // Materials
@@ -106,15 +108,14 @@ export default function StockManagement() {
     };
 
     loadData();
-  }, []);
+  }, [projectId]);
 
   // Load saved stocks
   const loadStocks = async () => {
     setLoading(true);
     try {
-      const data = projectName
-        ? await stocksApi.getByProject(projectName)
-        : await stocksApi.getAll();
+      // Use projectId to filter stocks by project
+      const data = await stocksApi.getAll(projectId);
 
       const flat = (Array.isArray(data) ? data : []).map((doc, idx) => {
         const materialName = resolveRef(doc.material, materialsMap);
@@ -151,7 +152,7 @@ export default function StockManagement() {
   }, [materialsMap, vendorsMap, contractorsMap]);
 
   const handleFilterChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, checked } = e.target;
     if (name === "materials") {
       let updated = [...filter.materials];
       if (checked) updated.push(value);
@@ -259,7 +260,7 @@ export default function StockManagement() {
   return (
     <>
       {/* Print Styles */}
-      <style jsx>{`
+      <style>{`
         @media print {
           body * { visibility: hidden; }
           .print-area, .print-area * { visibility: visible; }

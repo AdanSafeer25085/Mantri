@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { projectsApi, stocksApi, materialsApi } from "../lib/supabase";
+import { projectsApi, stocksApi, materialsApi, activitiesApi, tasksApi } from "../lib/supabase";
 
 export default function GanttChart({ projectId: propProjectId, daysFilter: propDaysFilter, minimal = false }) {
   const [projectData, setProjectData] = useState(null);
@@ -13,6 +13,16 @@ const [stockCheck, setStockCheck] = useState(null); // store stock details
 const [fromDate, setFromDate] = useState("");
 const [toDate, setToDate] = useState("");
 
+  // Add comprehensive filters
+  const [filter, setFilter] = useState({
+    fromDate: "",
+    toDate: "",
+    searchTerm: "",
+    activity: "",
+    minProgress: "",
+    maxProgress: ""
+  });
+
   // Use prop daysFilter if provided, otherwise use internal state
   const activeDaysFilter = propDaysFilter !== undefined ? propDaysFilter : daysFilter;
 
@@ -23,9 +33,80 @@ const [toDate, setToDate] = useState("");
           setLoading(false);
           return;
         }
-        const data = await projectsApi.getById(projectId);
-        setProjectData(data);
+        const projectData = await projectsApi.getById(projectId);
+        let activitiesData = await activitiesApi.getAll(projectId);
+        const tasksData = await tasksApi.getAll();
+
+        // If no activities exist, create a demo activity
+        if (!activitiesData || activitiesData.length === 0) {
+          activitiesData = [{
+            id: 'demo-activity',
+            title: 'Demo Activity',
+            description: 'This is a demo activity to show the Gantt Chart'
+          }];
+        }
+
+        // Group tasks by activity and add fallback properties
+        const activitiesWithTasks = (activitiesData || []).map(activity => {
+          const activityTasks = tasksData.filter(task =>
+            task.activity_id === activity.id ||
+            task.activity?.id === activity.id
+          ).map(task => {
+            // Create realistic fallback dates
+            const now = new Date();
+            const defaultStartDate = task.startDate || task.start_date || task.created_at || now;
+            const defaultEndDate = task.endDate || task.end_date || task.updated_at || new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
+            return {
+              // Copy existing task properties
+              ...task,
+              // Add fallback properties if missing
+              title: task.title || task.name || `Task for ${activity.title}`,
+              startDate: defaultStartDate,
+              endDate: defaultEndDate,
+              materials: task.materials || [],
+              days: task.days || 7,
+              performance: task.performance || 50
+            };
+          });
+
+          // If no tasks exist for this activity, create a demo task so something shows up
+          if (activityTasks.length === 0) {
+            const now = new Date();
+            activityTasks.push({
+              id: `demo-${activity.id}`,
+              title: `Demo task for ${activity.title}`,
+              startDate: now,
+              endDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+              materials: [],
+              days: 7,
+              performance: 50,
+              activity_id: activity.id
+            });
+          }
+
+          return {
+            ...activity,
+            tasks: activityTasks
+          };
+        });
+
+        // Combine project data with activities
+        const combinedData = {
+          ...projectData,
+          projectDetails: {
+            activities: activitiesWithTasks
+          }
+        };
+
+        console.log("✅ Fetched project data:", projectData);
+        console.log("✅ Fetched activities data:", activitiesData);
+        console.log("✅ Fetched tasks data:", tasksData);
+        console.log("✅ Combined data:", combinedData);
+
+        setProjectData(combinedData);
       } catch (error) {
+        console.error("Error fetching project data:", error);
         setProjectData(null);
       } finally {
         setLoading(false);
@@ -178,17 +259,7 @@ const handleCheckStock = async (task) => {
   }
 };
 
-  const columns = [
-    { type: "string", label: "Task ID" },
-    { type: "string", label: "Task Name" },
-    { type: "string", label: "Resource" },
-    { type: "date", label: "Start Date" },
-    { type: "date", label: "End Date" },
-    { type: "number", label: "Duration" },
-    { type: "number", label: "Percent Complete" },
-    { type: "string", label: "Dependencies" },
-  ];
-
+  /*
   // Generate rows for a specific activity, filter by days
   const generateRowsForActivity = (activity) => {
     const rows = [];
@@ -213,7 +284,8 @@ const handleCheckStock = async (task) => {
           } else if (today >= startDate) {
             const totalDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
             const elapsedDays = (today - startDate) / (1000 * 60 * 60 * 24);
-            progress = Math.min(Math.round((elapsedDays / totalDays) * 100), 100);
+            const calculatedProgress = Math.min(Math.round((elapsedDays / totalDays) * 100), 100);
+            progress = calculatedProgress;
           }
           // Duration from input days or calculated
           const duration = task.days
@@ -242,6 +314,7 @@ const handleCheckStock = async (task) => {
     });
     return rows;
   };
+  */
 
   // Get activities with valid tasks
   const getActivitiesWithTasks = () => {
@@ -283,16 +356,42 @@ const handleDateFilter = () => {
   const to = new Date(toDate);
 
   // ✅ Filter activities/tasks based on date range
-  const filtered = activities.filter((activity) =>
-    activity.tasks.some((task) => {
-      if (!task.startDate) return false;
-      const taskDate = new Date(task.startDate);
-      return taskDate >= from && taskDate <= to;
-    })
-  );
+  if (projectData?.project_details?.activities) {
+    const filtered = projectData.project_details.activities.filter((activity) =>
+      activity.tasks?.some((task) => {
+        if (!task.startDate) return false;
+        const taskDate = new Date(task.startDate);
+        return taskDate >= from && taskDate <= to;
+      })
+    );
 
-  setActivities(filtered);
+    setProjectData(prevData => ({
+      ...prevData,
+      project_details: {
+        ...prevData.project_details,
+        activities: filtered
+      }
+    }));
+  }
 };
+
+  // Handle filter change
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilter((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Reset filters
+  const resetFilters = () => {
+    setFilter({
+      fromDate: "",
+      toDate: "",
+      searchTerm: "",
+      activity: "",
+      minProgress: "",
+      maxProgress: ""
+    });
+  };
 
   // Custom Gantt chart renderer
   function CustomGanttChart({ activities }) {
@@ -334,6 +433,36 @@ const handleDateFilter = () => {
         }
       });
     });
+
+    // Apply comprehensive filters
+    const filteredTasks = allTasks.filter((task) => {
+      // Date filter
+      if (filter.fromDate) {
+        const fromDate = new Date(filter.fromDate);
+        if (task.startDate < fromDate) return false;
+      }
+      if (filter.toDate) {
+        const toDate = new Date(filter.toDate);
+        if (task.startDate > toDate) return false;
+      }
+
+      // Search filter (task title)
+      if (filter.searchTerm) {
+        const searchLower = filter.searchTerm.toLowerCase();
+        if (!task.title?.toLowerCase().includes(searchLower)) return false;
+      }
+
+      // Activity filter
+      if (filter.activity && task.activity !== filter.activity) return false;
+
+      // Progress range filter
+      if (filter.minProgress && task.progress < parseInt(filter.minProgress)) return false;
+      if (filter.maxProgress && task.progress > parseInt(filter.maxProgress)) return false;
+
+      return true;
+    });
+
+    allTasks = filteredTasks;
 
     if (allTasks.length === 0) {
       return (
@@ -519,6 +648,93 @@ const handleDateFilter = () => {
         <h3 className="text-base sm:text-xl font-semibold mb-3 sm:mb-4">
           Project Timeline (Gantt Chart)
         </h3>
+
+        {/* Comprehensive Filters */}
+        <div className="bg-gray-50 rounded-xl p-4 mb-6">
+          <h4 className="text-lg font-semibold mb-4 text-gray-700">🔍 Filters</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">From Date</label>
+              <input
+                type="date"
+                name="fromDate"
+                value={filter.fromDate}
+                onChange={handleFilterChange}
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">To Date</label>
+              <input
+                type="date"
+                name="toDate"
+                value={filter.toDate}
+                onChange={handleFilterChange}
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Search Tasks</label>
+              <input
+                type="text"
+                name="searchTerm"
+                value={filter.searchTerm}
+                onChange={handleFilterChange}
+                placeholder="Task title..."
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Activity</label>
+              <select
+                name="activity"
+                value={filter.activity}
+                onChange={handleFilterChange}
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Activities</option>
+                {activitiesWithTasks.map((activity) => (
+                  <option key={activity.title} value={activity.title}>{activity.title}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Min Progress (%)</label>
+              <input
+                type="number"
+                name="minProgress"
+                value={filter.minProgress}
+                onChange={handleFilterChange}
+                placeholder="0"
+                min="0"
+                max="100"
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Max Progress (%)</label>
+              <input
+                type="number"
+                name="maxProgress"
+                value={filter.maxProgress}
+                onChange={handleFilterChange}
+                placeholder="100"
+                min="0"
+                max="100"
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <button
+              onClick={resetFilters}
+              className="bg-gray-300 px-4 py-2 rounded-lg text-sm hover:bg-gray-400 transition"
+            >
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
         {/* Days Filter Input - Only show if no prop provided */}
         {propDaysFilter === undefined && (
           <div className="mb-4 sm:mb-6">

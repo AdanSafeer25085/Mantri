@@ -25,27 +25,28 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
 ### 3. Database Setup
-Run the following SQL in your Supabase SQL Editor:
+Run the complete migration script in your Supabase SQL Editor:
 
+**Run the complete migration (IMPORTANT)**
 ```sql
--- Add required columns to admins table
-ALTER TABLE admins
-ADD COLUMN IF NOT EXISTS job_title TEXT,
-ADD COLUMN IF NOT EXISTS mobile TEXT,
-ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Active',
-ADD COLUMN IF NOT EXISTS plain_password TEXT;
-
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_admins_status ON admins(status);
-CREATE INDEX IF NOT EXISTS idx_admins_mobile ON admins(mobile);
-CREATE INDEX IF NOT EXISTS idx_admins_job_title ON admins(job_title);
-
--- Update any existing admin records to have default values
-UPDATE admins SET
-  job_title = COALESCE(job_title, 'Administrator'),
-  status = COALESCE(status, 'Active')
-WHERE job_title IS NULL OR status IS NULL;
+-- Copy and paste the ENTIRE contents of supabase_migration.sql
+-- into Supabase SQL Editor and run it
+-- This includes:
+-- ✅ All database tables and relationships
+-- ✅ Project isolation (materials, stocks etc. are project-specific)
+-- ✅ Cascade deletion (deleting project deletes all related data)
+-- ✅ Admin permissions system
+-- ✅ Performance indexes and Row Level Security
+-- ✅ Automatic testing and verification
 ```
+
+The migration script is comprehensive and includes:
+- **Steps 1-27**: Core database schema and tables
+- **Step 28**: Project isolation with CASCADE foreign keys
+- **Step 29**: Admin table fixes for permissions system
+- **Step 30**: Data linking for existing records
+- **Step 31**: Automatic cascade deletion testing
+- **Step 32**: Verification queries to ensure setup is correct
 
 ## 🏃‍♂️ Running the Application
 

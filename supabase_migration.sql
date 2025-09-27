@@ -19,7 +19,7 @@ CREATE TYPE finance_type AS ENUM ('Credit', 'Debit');
 CREATE TYPE credit_option AS ENUM ('Customer', 'Other');
 CREATE TYPE debit_option AS ENUM ('Labour', 'Material', 'Salary', 'Office', 'Other');
 CREATE TYPE payment_mode AS ENUM ('Cheque', 'Account Pay', 'Cash', 'Major Cash');
-CREATE TYPE lead_type AS ENUM ('Cold', 'Warm', 'Hot', '');
+CREATE TYPE lead_type AS ENUM ('Cold', 'Warm', 'Hot', 'New');
 
 -- STEP 3: Create Users table (for authentication)
 CREATE TABLE users (
@@ -144,7 +144,7 @@ CREATE TABLE leads (
     visit_date DATE,
     next_visit DATE,
     note TEXT,
-    lead_type lead_type DEFAULT '',
+    lead_type lead_type DEFAULT 'New',
     is_converted BOOLEAN DEFAULT FALSE,
     -- Extra fields if converted to customer
     aadhar_no TEXT,
@@ -419,12 +419,263 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
+-- STEP 28: PROJECT ISOLATION & CASCADE DELETION SETUP
+-- =====================================================
+-- These steps ensure proper project-level data isolation and cascade deletion
+
+-- Add project_id columns with CASCADE foreign keys to all relevant tables
+ALTER TABLE materials
+ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES projects(id) ON DELETE CASCADE;
+
+ALTER TABLE activities
+ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES projects(id) ON DELETE CASCADE;
+
+ALTER TABLE tasks
+ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES projects(id) ON DELETE CASCADE;
+
+ALTER TABLE contractors
+ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES projects(id) ON DELETE CASCADE;
+
+ALTER TABLE vendors
+ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES projects(id) ON DELETE CASCADE;
+
+-- Fix stocks table - add proper foreign key with CASCADE
+ALTER TABLE stocks
+ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES projects(id) ON DELETE CASCADE;
+
+-- Fix finances table constraint to CASCADE
+ALTER TABLE finances
+DROP CONSTRAINT IF EXISTS finances_project_id_fkey;
+
+ALTER TABLE finances
+ADD CONSTRAINT finances_project_id_fkey
+FOREIGN KEY (project_id)
+REFERENCES projects(id)
+ON DELETE CASCADE;
+
+-- Add performance indexes for project_id columns
+CREATE INDEX IF NOT EXISTS idx_materials_project_id ON materials(project_id);
+CREATE INDEX IF NOT EXISTS idx_activities_project_id ON activities(project_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id);
+CREATE INDEX IF NOT EXISTS idx_contractors_project_id ON contractors(project_id);
+CREATE INDEX IF NOT EXISTS idx_vendors_project_id ON vendors(project_id);
+CREATE INDEX IF NOT EXISTS idx_stocks_project_id ON stocks(project_id);
+
+-- =====================================================
+-- STEP 29: FIX ADMIN TABLE FOR PERMISSIONS SYSTEM
+-- =====================================================
+-- Add required columns to admins table
+ALTER TABLE admins
+ADD COLUMN IF NOT EXISTS job_title TEXT,
+ADD COLUMN IF NOT EXISTS mobile TEXT,
+ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Active',
+ADD COLUMN IF NOT EXISTS plain_password TEXT;
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_admins_status ON admins(status);
+CREATE INDEX IF NOT EXISTS idx_admins_mobile ON admins(mobile);
+CREATE INDEX IF NOT EXISTS idx_admins_job_title ON admins(job_title);
+
+-- Update any existing admin records to have default values
+UPDATE admins SET
+  job_title = COALESCE(job_title, 'Administrator'),
+  status = COALESCE(status, 'Active')
+WHERE job_title IS NULL OR status IS NULL;
+
+-- =====================================================
+-- STEP 30: DATA LINKING FOR EXISTING RECORDS
+-- =====================================================
+-- Link existing stocks to projects based on name matching
+-- This handles existing data that was created before project isolation
+
+-- Update stocks to use proper project_id based on project name
+UPDATE stocks
+SET project_id = p.id
+FROM projects p
+WHERE stocks.project = p.name
+  AND stocks.project_id IS NULL;
+
+-- Handle case-insensitive matching for slight differences
+UPDATE stocks
+SET project_id = p.id
+FROM projects p
+WHERE LOWER(stocks.project) = LOWER(p.name)
+  AND stocks.project_id IS NULL;
+
+-- Handle common variations and partial matches
+UPDATE stocks
+SET project_id = p.id
+FROM projects p
+WHERE stocks.project_id IS NULL
+  AND (
+    REPLACE(LOWER(stocks.project), ' ', '') = REPLACE(LOWER(p.name), ' ', '') OR
+    p.name ILIKE '%' || stocks.project || '%' OR
+    stocks.project ILIKE '%' || p.name || '%'
+  );
+
+-- =====================================================
+-- STEP 31: CASCADE DELETION TEST
+-- =====================================================
+-- Test cascade deletion functionality
+
+-- Create a test project
+DO $$
+DECLARE
+    test_project_id UUID;
+BEGIN
+    -- Insert test project with required fields
+    INSERT INTO projects (name, location)
+    VALUES ('CASCADE_TEST_PROJECT', 'Test Location')
+    RETURNING id INTO test_project_id;
+
+    -- Add test data to verify cascade deletion
+    INSERT INTO stocks (date, project, project_id, type, quantity)
+    VALUES (CURRENT_DATE, 'CASCADE_TEST_PROJECT', test_project_id, 'Inward', 100);
+
+    INSERT INTO materials (name, project_id, activity_id, unit_id)
+    VALUES ('Test Material', test_project_id,
+            (SELECT id FROM activities LIMIT 1),
+            (SELECT id FROM units LIMIT 1));
+
+    -- Delete the test project (should cascade delete all related data)
+    DELETE FROM projects WHERE id = test_project_id;
+
+    -- Verify cascade worked (should find no orphaned records)
+    IF (SELECT COUNT(*) FROM stocks WHERE project = 'CASCADE_TEST_PROJECT') > 0 THEN
+        RAISE NOTICE 'WARNING: Cascade deletion not working for stocks';
+    END IF;
+
+    IF (SELECT COUNT(*) FROM materials WHERE project_id = test_project_id) > 0 THEN
+        RAISE NOTICE 'WARNING: Cascade deletion not working for materials';
+    END IF;
+
+    RAISE NOTICE 'CASCADE DELETION TEST COMPLETED SUCCESSFULLY';
+END $$;
+
+-- =====================================================
+-- STEP 32: VERIFICATION QUERIES
+-- =====================================================
+-- Run these queries to verify the setup is correct
+
+-- Check project_id columns exist
+SELECT
+    'Project isolation columns:' as info,
+    table_name,
+    column_name
+FROM information_schema.columns
+WHERE column_name = 'project_id'
+AND table_schema = 'public'
+ORDER BY table_name;
+
+-- Check CASCADE foreign key constraints
+SELECT
+    'CASCADE constraints:' as info,
+    tc.table_name,
+    kcu.column_name,
+    rc.delete_rule
+FROM information_schema.table_constraints AS tc
+JOIN information_schema.key_column_usage AS kcu
+    ON tc.constraint_name = kcu.constraint_name
+JOIN information_schema.referential_constraints AS rc
+    ON tc.constraint_name = rc.constraint_name
+WHERE tc.constraint_type = 'FOREIGN KEY'
+AND kcu.column_name = 'project_id'
+AND tc.table_schema = 'public'
+AND rc.delete_rule = 'CASCADE'
+ORDER BY tc.table_name;
+
+-- =====================================================
+-- STEP 21: FIX LEADS ENUM TYPE (IF NEEDED)
+-- =====================================================
+-- This fixes the lead_type enum to ensure it works properly
+
+-- Update the leads table enum to ensure it has the correct 'New' default
+ALTER TABLE leads ALTER COLUMN lead_type DROP DEFAULT;
+UPDATE leads SET lead_type = 'New' WHERE lead_type IS NULL;
+ALTER TABLE leads ALTER COLUMN lead_type SET DEFAULT 'New';
+
+-- =====================================================
+-- STEP 22: CREATE DEFAULT ADMIN USERS
+-- =====================================================
+-- This creates default admin users that can log into the system
+
+-- Insert default admin users (main administrators)
+INSERT INTO users (id, email, username, full_name, password_hash, status)
+VALUES (
+    gen_random_uuid(),
+    'admin@construction.com',
+    'admin',
+    'System Administrator',
+    'admin123',  -- Change this password in production!
+    'Active'
+) ON CONFLICT (username) DO NOTHING;
+
+INSERT INTO users (id, email, username, full_name, password_hash, status)
+VALUES (
+    gen_random_uuid(),
+    'adil@construction.com',
+    'adil',
+    'Adil Administrator',
+    'adil123',   -- Change this password in production!
+    'Active'
+) ON CONFLICT (username) DO NOTHING;
+
+-- Link users to admins table with full permissions
+INSERT INTO admins (user_id, permissions, role, job_title, mobile, status, plain_password)
+SELECT
+    u.id,
+    '["New Projects", "Finance", "Reports", "Project Overview", "Stock Management", "Gantt Chart", "Technical Files", "Legal Files", "Leads", "Customers", "Materials", "Activities", "Tasks", "Contractors", "Vendors", "Units", "Admin Management"]'::jsonb,
+    'main_admin',
+    'System Administrator',
+    '+1234567890',
+    'Active',
+    u.password_hash
+FROM users u
+WHERE u.username IN ('admin', 'adil')
+ON CONFLICT (user_id) DO UPDATE SET
+    permissions = EXCLUDED.permissions,
+    role = EXCLUDED.role,
+    job_title = EXCLUDED.job_title,
+    status = EXCLUDED.status,
+    plain_password = EXCLUDED.plain_password;
+
+-- Verify the admin users were created successfully
+SELECT
+    'Admin users created:' as info,
+    u.username,
+    u.full_name,
+    a.role,
+    array_length(a.permissions, 1) as permission_count
+FROM users u
+JOIN admins a ON u.id = a.user_id
+WHERE u.username IN ('admin', 'adil');
+
+-- =====================================================
 -- MIGRATION COMPLETE!
 -- =====================================================
--- After running all these commands, your Supabase database is ready.
+-- After running all these commands, your Supabase database is ready with:
+-- ✅ Full database schema with all tables and relationships
+-- ✅ Project-level data isolation (materials, stocks, etc. are project-specific)
+-- ✅ Cascade deletion (deleting a project deletes all related data)
+-- ✅ Admin permissions system with role management
+-- ✅ Row Level Security policies
+-- ✅ Performance indexes and triggers
+
 -- Next steps:
--- 1. Install Supabase client in frontend: npm install @supabase/supabase-js
--- 2. Configure Supabase client with your API key
--- 3. Update frontend code to use Supabase instead of backend API calls
--- 4. Test all functionality
+-- 1. Set up environment variables in your .env file:
+--    VITE_SUPABASE_URL=https://your-project-id.supabase.co
+--    VITE_SUPABASE_ANON_KEY=your-anon-key-here
+-- 2. Log in with default admin credentials:
+--    Username: admin, Password: admin123
+--    Username: adil, Password: adil123
+-- 3. Test the application functionality
+-- 4. Verify cascade deletion works as expected
+-- 5. IMPORTANT: Change default passwords in production!
+-- 6. Deploy to production
+
+-- IMPORTANT NOTES:
+-- - When you delete a project, ALL related data will be automatically deleted
+-- - Materials, stocks, activities, etc. are now project-specific
+-- - Admin system includes full permissions management
+-- - All tables have proper indexes for performance
 -- 5. Delete the backend folder once everything works

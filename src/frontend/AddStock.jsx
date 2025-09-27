@@ -7,6 +7,7 @@ export default function AddStock() {
   const navigate = useNavigate();
   const location = useLocation();
   const projectId = location.state?.projectId;
+  const projectName = location.state?.projectName || location.state?.project?.name || "";
   const editId = location.state?.editId;
 
   // Fetched lists
@@ -19,7 +20,7 @@ export default function AddStock() {
   // Form state
   const [newStock, setNewStock] = useState({
     date: "",
-    project: "",
+    project: projectName,
     material: "",
     type: "",
     vendor: "",
@@ -158,6 +159,7 @@ export default function AddStock() {
     const payload = {
       date: newStock.date,
       project: newStock.project.trim(),
+      project_id: projectId,
       material_id: newStock.material,
       type: newStock.type,
       quantity: Number(newStock.quantity),

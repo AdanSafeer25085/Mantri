@@ -80,15 +80,31 @@ export default function Admin() {
   };
 
   const deleteAdmin = async (index) => {
+    const admin = admins[index];
+
+    // Check if this is a main admin that cannot be deleted
+    const isMainAdmin = admin?.role === "main_admin" ||
+                       admin?.username === "admin" ||
+                       admin?.username === "adil";
+
+    if (isMainAdmin) {
+      alert("Cannot delete main administrator! Main admins are protected from deletion for security reasons.");
+      return;
+    }
+
+    // Additional check: prevent deleting the last admin
+    if (admins.length <= 1) {
+      alert("Cannot delete the last admin! At least one admin must exist to manage the system.");
+      return;
+    }
+
     if (window.confirm("Are you sure you want to delete this admin?")) {
-      const admin = admins[index];
-      
       try {
         await adminsApi.delete(admin.id);
-        
+
         console.log("Admin deleted from database");
         alert("Admin deleted successfully!");
-        
+
         // Reload admins from database
         loadAdmins();
       } catch (error) {
@@ -125,7 +141,7 @@ export default function Admin() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-200">
             <tr>
-              <th className="px-4 xl:px-6 py-3 text-left text-xs xl:text-sm font-semibold text-gray-700">Position</th>
+              <th className="px-4 xl:px-6 py-3 text-left text-xs xl:text-sm font-semibold text-gray-700">#</th>
               <th className="px-4 xl:px-6 py-3 text-left text-xs xl:text-sm font-semibold text-gray-700">Name</th>
               <th className="px-4 xl:px-6 py-3 text-left text-xs xl:text-sm font-semibold text-gray-700">Mobile</th>
               <th className="px-4 xl:px-6 py-3 text-left text-xs xl:text-sm font-semibold text-gray-700">Username</th>
@@ -150,9 +166,9 @@ export default function Admin() {
                   key={admin.id || index}
                   className="hover:bg-gray-50 transition"
                 >
-                  <td className="px-4 xl:px-6 py-3 text-xs xl:text-sm">{admin.position}</td>
+                  <td className="px-4 xl:px-6 py-3 text-xs xl:text-sm font-bold text-blue-600">{index + 1}</td>
                   <td className="px-4 xl:px-6 py-3 text-xs xl:text-sm font-medium">{admin.fullName || admin.name}</td>
-                  <td className="px-4 xl:px-6 py-3 text-xs xl:text-sm">{admin.mobile}</td>
+                  <td className="px-4 xl:px-6 py-3 text-xs xl:text-sm">{admin.mobile || "Not provided"}</td>
                   <td className="px-4 xl:px-6 py-3 text-xs xl:text-sm">{admin.username}</td>
                   <td className="px-4 xl:px-6 py-3 text-xs xl:text-sm font-mono">{admin.displayPassword || "••••••••"}</td>
                   <td className="px-4 xl:px-6 py-3 text-xs xl:text-sm max-w-xs truncate">
@@ -167,12 +183,25 @@ export default function Admin() {
                     >
                       <FaEdit />
                     </button>
-                    <button
-                      onClick={() => deleteAdmin(index)}
-                      className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded"
-                    >
-                      <FaTrash />
-                    </button>
+                    {(() => {
+                      const isMainAdmin = admin?.role === "main_admin" ||
+                                         admin?.username === "admin" ||
+                                         admin?.username === "adil";
+                      return (
+                        <button
+                          onClick={() => deleteAdmin(index)}
+                          disabled={isMainAdmin}
+                          className={`p-1 rounded ${
+                            isMainAdmin
+                              ? "text-gray-400 cursor-not-allowed opacity-50"
+                              : "text-red-600 hover:text-red-800 hover:bg-red-50"
+                          }`}
+                          title={isMainAdmin ? "Main admin cannot be deleted" : "Delete admin"}
+                        >
+                          <FaTrash />
+                        </button>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))
@@ -210,10 +239,10 @@ export default function Admin() {
                 >
                   <td className="px-3 py-3 text-xs">
                     <div className="font-medium">{admin.fullName || admin.name}</div>
-                    <div className="text-gray-500">{admin.position}</div>
+                    <div className="text-blue-600 font-bold">#{index + 1}</div>
                   </td>
                   <td className="px-3 py-3 text-xs">
-                    <div>{admin.mobile}</div>
+                    <div>{admin.mobile || "Not provided"}</div>
                     <div className="text-gray-500">{admin.username}</div>
                   </td>
                   <td className="px-3 py-3 text-xs">
@@ -230,12 +259,25 @@ export default function Admin() {
                     >
                       <FaEdit />
                     </button>
-                    <button
-                      onClick={() => deleteAdmin(index)}
-                      className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded"
-                    >
-                      <FaTrash />
-                    </button>
+                    {(() => {
+                      const isMainAdmin = admin?.role === "main_admin" ||
+                                         admin?.username === "admin" ||
+                                         admin?.username === "adil";
+                      return (
+                        <button
+                          onClick={() => deleteAdmin(index)}
+                          disabled={isMainAdmin}
+                          className={`p-1 rounded ${
+                            isMainAdmin
+                              ? "text-gray-400 cursor-not-allowed opacity-50"
+                              : "text-red-600 hover:text-red-800 hover:bg-red-50"
+                          }`}
+                          title={isMainAdmin ? "Main admin cannot be deleted" : "Delete admin"}
+                        >
+                          <FaTrash />
+                        </button>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))
@@ -259,8 +301,8 @@ export default function Admin() {
                     {admin.fullName || admin.name}
                   </h3>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded">
-                      {admin.position}
+                    <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded font-bold">
+                      #{index + 1}
                     </span>
                   </div>
                 </div>
@@ -271,19 +313,32 @@ export default function Admin() {
                   >
                     <FaEdit />
                   </button>
-                  <button
-                    onClick={() => deleteAdmin(index)}
-                    className="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded"
-                  >
-                    <FaTrash />
-                  </button>
+                  {(() => {
+                    const isMainAdmin = admin?.role === "main_admin" ||
+                                       admin?.username === "admin" ||
+                                       admin?.username === "adil";
+                    return (
+                      <button
+                        onClick={() => deleteAdmin(index)}
+                        disabled={isMainAdmin}
+                        className={`p-2 rounded ${
+                          isMainAdmin
+                            ? "text-gray-400 cursor-not-allowed opacity-50"
+                            : "text-red-600 hover:text-red-800 hover:bg-red-50"
+                        }`}
+                        title={isMainAdmin ? "Main admin cannot be deleted" : "Delete admin"}
+                      >
+                        <FaTrash />
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Mobile:</span>
-                  <span className="text-gray-800 font-medium">{admin.mobile}</span>
+                  <span className="text-gray-800 font-medium">{admin.mobile || "Not provided"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Username:</span>

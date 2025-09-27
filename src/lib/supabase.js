@@ -1,8 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Use environment variables with fallback for development
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://glfftpbihxrxbxxbinkk.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsZmZ0cGJpaHhyeGJ4eGJpbmtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0NDM2MDEsImV4cCI6MjA3NDAxOTYwMX0.FwFBqT7StyO5qYA0HqIZf8275RLkkqe0OWN_l4S1zBU';
+// Use environment variables - REQUIRED for production
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    'Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.'
+  );
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -22,14 +28,7 @@ export const projectsApi = {
   async getById(id) {
     const { data, error } = await supabase
       .from('projects')
-      .select(`
-        *,
-        project_activities!inner(
-          activity:activities(*)
-        ),
-        customers(*),
-        leads(*)
-      `)
+      .select('*')
       .eq('id', id)
       .single();
     if (error) throw error;
@@ -68,11 +67,18 @@ export const projectsApi = {
 
 // Activities
 export const activitiesApi = {
-  async getAll() {
-    const { data, error } = await supabase
+  async getAll(projectId = null) {
+    let query = supabase
       .from('activities')
       .select('*')
       .order('title');
+
+    // Filter by project if provided
+    if (projectId) {
+      query = query.eq('project_id', projectId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },
@@ -186,8 +192,8 @@ export const tasksApi = {
 
 // Materials
 export const materialsApi = {
-  async getByActivity(activityId) {
-    const { data, error } = await supabase
+  async getByActivity(activityId, projectId = null) {
+    let query = supabase
       .from('materials')
       .select(`
         *,
@@ -195,12 +201,19 @@ export const materialsApi = {
       `)
       .eq('activity_id', activityId)
       .order('name');
+
+    // Filter by project if provided
+    if (projectId) {
+      query = query.eq('project_id', projectId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },
 
-  async getAll() {
-    const { data, error } = await supabase
+  async getAll(projectId = null) {
+    let query = supabase
       .from('materials')
       .select(`
         *,
@@ -208,6 +221,13 @@ export const materialsApi = {
         activity:activities(*)
       `)
       .order('name');
+
+    // Filter by project if provided
+    if (projectId) {
+      query = query.eq('project_id', projectId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },
@@ -309,11 +329,18 @@ export const unitsApi = {
 
 // Vendors
 export const vendorsApi = {
-  async getAll() {
-    const { data, error } = await supabase
+  async getAll(projectId = null) {
+    let query = supabase
       .from('vendors')
       .select('*')
       .order('name');
+
+    // Filter by project if provided
+    if (projectId) {
+      query = query.eq('project_id', projectId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },
@@ -360,24 +387,38 @@ export const vendorsApi = {
 
 // Contractors
 export const contractorsApi = {
-  async getAll() {
-    const { data, error } = await supabase
+  async getAll(projectId = null) {
+    let query = supabase
       .from('contractors')
       .select(`
         *,
         activity:activities(*)
       `)
       .order('name');
+
+    // Filter by project if provided
+    if (projectId) {
+      query = query.eq('project_id', projectId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },
 
-  async getByActivity(activityId) {
-    const { data, error } = await supabase
+  async getByActivity(activityId, projectId = null) {
+    let query = supabase
       .from('contractors')
       .select('*')
       .eq('activity_id', activityId)
       .order('name');
+
+    // Filter by project if provided
+    if (projectId) {
+      query = query.eq('project_id', projectId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },
@@ -558,9 +599,25 @@ export const leadsApi = {
     if (error) throw error;
   },
 
-  async convertToCustomer(leadId) {
+  async convertToCustomer(leadData) {
+    // Create customer from lead data
+    const customerData = {
+      datetime: new Date().toISOString(),
+      full_name: leadData.full_name,
+      primary_contact: leadData.contact_no,
+      secondary_contact: leadData.secondary_contact || null,
+      aadhar_no: leadData.aadhar_no,
+      address: leadData.address,
+      unit_no: leadData.unit_no,
+      amount: leadData.amount,
+      project_id: leadData.project_id
+    };
+
     const { data, error } = await supabase
-      .rpc('convert_lead_to_customer', { lead_id: leadId });
+      .from('customers')
+      .insert(customerData)
+      .select()
+      .single();
     if (error) throw error;
     return data;
   }
@@ -568,8 +625,8 @@ export const leadsApi = {
 
 // Stocks
 export const stocksApi = {
-  async getAll() {
-    const { data, error } = await supabase
+  async getAll(projectId = null) {
+    let query = supabase
       .from('stocks')
       .select(`
         *,
@@ -578,6 +635,13 @@ export const stocksApi = {
         contractor:contractors(*)
       `)
       .order('date', { ascending: false });
+
+    // Filter by project if provided
+    if (projectId) {
+      query = query.eq('project_id', projectId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },

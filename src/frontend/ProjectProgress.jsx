@@ -243,12 +243,16 @@ export default function ProjectProgress() {
   // ✅ Handle project completion
   const handleSubmitProject = async () => {
     try {
-      const projectData = {
-        name: location.state?.project?.name || "Project " + Date.now(),
-        location: location.state?.project?.location || "Construction Site",
+      const existingProject = location.state?.project;
+
+      if (!existingProject || !existingProject.id) {
+        alert("No project found. Please start from the beginning.");
+        return;
+      }
+
+      const updateData = {
         status: "Completed",
-        activities: activities.map((activity) => activity.id),
-        projectDetails: {
+        project_details: {
           activities: activities.map((activity) => ({
             ...activity,
             tasks: activity.tasks.map((task) => ({
@@ -259,7 +263,8 @@ export default function ProjectProgress() {
         },
       };
 
-      await projectsApi.create(projectData);
+      // Update the existing project instead of creating a new one
+      await projectsApi.update(existingProject.id, updateData);
 
       alert("Project completed and saved successfully!");
       window.location.href = "/dashboard";
@@ -268,6 +273,7 @@ export default function ProjectProgress() {
       alert("Error completing project");
     }
   };
+  /*
   const handleCopyMaterials = (taskId) => {
     // Find the materials of this task
     const materialsToCopy = materials[taskId] || [];
@@ -290,6 +296,7 @@ export default function ProjectProgress() {
 
     alert("Materials copied successfully!");
   };
+  */
 
   // Copy table data to clipboard
   const handleCopyTableData = (taskId) => {

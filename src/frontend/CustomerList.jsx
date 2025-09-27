@@ -10,6 +10,16 @@ export default function CustomerList() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Add filters
+  const [filter, setFilter] = useState({
+    fromDate: "",
+    toDate: "",
+    searchTerm: "",
+    unitNo: "",
+    minAmount: "",
+    maxAmount: ""
+  });
+
   const handlePrintPDF = () => {
     window.print();
   };
@@ -55,6 +65,56 @@ export default function CustomerList() {
     }
   };
 
+  // Handle filter change
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilter((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Apply filters
+  const filteredCustomers = customers.filter((customer) => {
+    const customerDate = new Date(customer.datetime || customer.created_at);
+    const fromDate = filter.fromDate ? new Date(filter.fromDate) : null;
+    const toDate = filter.toDate ? new Date(filter.toDate) : null;
+
+    // Date filter
+    if (fromDate && customerDate < fromDate) return false;
+    if (toDate && customerDate > toDate) return false;
+
+    // Search filter (name, contact, address)
+    if (filter.searchTerm) {
+      const searchLower = filter.searchTerm.toLowerCase();
+      const matchesSearch =
+        customer.full_name?.toLowerCase().includes(searchLower) ||
+        customer.primary_contact?.toLowerCase().includes(searchLower) ||
+        customer.address?.toLowerCase().includes(searchLower) ||
+        customer.aadhar_no?.toLowerCase().includes(searchLower);
+      if (!matchesSearch) return false;
+    }
+
+    // Unit number filter
+    if (filter.unitNo && customer.unit_no !== filter.unitNo) return false;
+
+    // Amount range filter
+    const amount = parseFloat(customer.amount) || 0;
+    if (filter.minAmount && amount < parseFloat(filter.minAmount)) return false;
+    if (filter.maxAmount && amount > parseFloat(filter.maxAmount)) return false;
+
+    return true;
+  });
+
+  // Reset filters
+  const resetFilters = () => {
+    setFilter({
+      fromDate: "",
+      toDate: "",
+      searchTerm: "",
+      unitNo: "",
+      minAmount: "",
+      maxAmount: ""
+    });
+  };
+
   if (loading) {
     return <p className="text-center mt-6 text-gray-600 p-4 sm:p-6">Loading customers...</p>;
   }
@@ -62,7 +122,7 @@ export default function CustomerList() {
   return (
     <>
       {/* Print Styles */}
-      <style jsx>{`
+      <style>{`
         @media print {
           body * { visibility: hidden; }
           .print-area, .print-area * { visibility: visible; }
@@ -107,6 +167,84 @@ export default function CustomerList() {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="bg-white shadow-lg rounded-2xl p-4 sm:p-6 mb-6 no-print">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700">From Date</label>
+            <input
+              type="date"
+              name="fromDate"
+              value={filter.fromDate}
+              onChange={handleFilterChange}
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700">To Date</label>
+            <input
+              type="date"
+              name="toDate"
+              value={filter.toDate}
+              onChange={handleFilterChange}
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700">Search</label>
+            <input
+              type="text"
+              name="searchTerm"
+              value={filter.searchTerm}
+              onChange={handleFilterChange}
+              placeholder="Name, Contact, Aadhar..."
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700">Unit No</label>
+            <input
+              type="text"
+              name="unitNo"
+              value={filter.unitNo}
+              onChange={handleFilterChange}
+              placeholder="Enter unit number"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700">Min Amount</label>
+            <input
+              type="number"
+              name="minAmount"
+              value={filter.minAmount}
+              onChange={handleFilterChange}
+              placeholder="Minimum"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-sm font-medium text-gray-700">Max Amount</label>
+            <input
+              type="number"
+              name="maxAmount"
+              value={filter.maxAmount}
+              onChange={handleFilterChange}
+              placeholder="Maximum"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={resetFilters}
+              className="w-full bg-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-400 transition"
+            >
+              Reset Filters
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Desktop Table View - Hidden on small screens */}
       <div className="hidden lg:block overflow-x-auto bg-white shadow-lg rounded-2xl">
         <table className="min-w-full table-auto">
@@ -124,7 +262,7 @@ export default function CustomerList() {
             </tr>
           </thead>
           <tbody>
-            {customers.map((c) => (
+            {filteredCustomers.map((c) => (
               <tr key={c.id} className="text-center hover:bg-gray-50">
                 <td className="px-3 xl:px-4 py-3 border text-xs xl:text-sm">
                   {new Date(c.datetime).toLocaleString()}
@@ -162,7 +300,7 @@ export default function CustomerList() {
                 </td>
               </tr>
             ))}
-            {customers.length === 0 && (
+            {filteredCustomers.length === 0 && (
               <tr>
                 <td
                   colSpan="9"
@@ -189,7 +327,7 @@ export default function CustomerList() {
             </tr>
           </thead>
           <tbody>
-            {customers.map((c) => (
+            {filteredCustomers.map((c) => (
               <tr key={c.id} className="text-center hover:bg-gray-50">
                 <td className="px-2 py-3 border text-xs">
                   <div className="font-medium">{c.full_name}</div>
@@ -213,7 +351,7 @@ export default function CustomerList() {
                 </td>
               </tr>
             ))}
-            {customers.length === 0 && (
+            {filteredCustomers.length === 0 && (
               <tr>
                 <td
                   colSpan="5"
@@ -229,7 +367,7 @@ export default function CustomerList() {
 
       {/* Mobile Card View - Visible only on small screens */}
       <div className="sm:hidden space-y-4 no-print">
-        {customers.length === 0 ? (
+        {filteredCustomers.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500 italic">
             No customers found
           </div>

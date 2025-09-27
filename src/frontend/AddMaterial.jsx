@@ -14,14 +14,17 @@ export default function AddMaterial() {
   const [activities, setActivities] = useState([]);
   const [units, setUnits] = useState([]);
   const editId = location.state?.editId;
+  const projectId = location.state?.projectId; // Get projectId from navigation
 
   // Fetch activities and units from database
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const activitiesData = await activitiesApi.getAll();
+        // Fetch activities filtered by project
+        const activitiesData = await activitiesApi.getAll(projectId);
         setActivities(Array.isArray(activitiesData) ? activitiesData : []);
 
+        // Units are global, so no projectId needed
         const unitsData = await unitsApi.getAll();
         setUnits(Array.isArray(unitsData) ? unitsData : []);
       } catch (err) {
@@ -66,6 +69,7 @@ export default function AddMaterial() {
       status: formData.status,
       activity_id: formData.activity,
       unit_id: formData.unit,
+      project_id: projectId, // Include project_id when creating material
     };
 
     try {

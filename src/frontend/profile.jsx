@@ -328,7 +328,7 @@ export default function Profile() {
                   return;
                 }
                 await authApi.signIn(usernameToCheck, credentials.currentPassword);
-              } catch (error) {
+              } catch {
                 alert("Current password is incorrect!");
                 setCredSaving(false);
                 return;
@@ -348,9 +348,9 @@ export default function Profile() {
 
                 alert("Username changed successfully!");
                 setCredentials({ username: "", currentPassword: "" });
-              } catch (error) {
-                console.error("Username change error:", error);
-                alert("Error changing username: " + error.message);
+              } catch (err) {
+                console.error("Username change error:", err);
+                alert("Error changing username: " + err.message);
               } finally {
                 setCredSaving(false);
               }

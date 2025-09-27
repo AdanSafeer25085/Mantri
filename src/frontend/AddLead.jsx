@@ -13,7 +13,7 @@ export default function AddLead() {
     next_visit: "",
     visit_date: "",
     note: "",
-    lead_type: "",
+    lead_type: "New",
     is_converted: false,
     aadhar_no: "",
     address: "",
@@ -81,17 +81,32 @@ export default function AddLead() {
     try {
       const leadData = {
         ...lead,
-        project_id: projectId
+        project_id: projectId,
+        // Convert empty strings to null for numeric fields
+        amount: lead.amount === '' ? null : lead.amount
       };
 
       if (editId) {
         await leadsApi.update(editId, leadData);
         alert(`✅ Lead updated successfully!`);
       } else if (lead.is_converted) {
-        // Convert lead to customer
-        await leadsApi.convertToCustomer(leadData);
-        alert(`✅ Lead "${lead.full_name}" converted to Customer successfully!`);
+        // Directly create a customer when "Is Converted" is checked
+        const { customersApi } = await import("../lib/supabase");
+        const customerData = {
+          datetime: new Date().toISOString(),
+          full_name: lead.full_name,
+          primary_contact: lead.contact_no,
+          secondary_contact: null,
+          aadhar_no: lead.aadhar_no,
+          address: lead.address,
+          unit_no: lead.unit_no,
+          amount: lead.amount === '' ? null : lead.amount,
+          project_id: projectId
+        };
+        await customersApi.create(customerData);
+        alert(`✅ Customer "${lead.full_name}" created successfully!`);
       } else {
+        // Create a regular lead
         await leadsApi.create(leadData);
         alert(`✅ Lead "${lead.full_name}" added successfully!`);
       }
@@ -102,7 +117,7 @@ export default function AddLead() {
         next_visit: "",
         visit_date: "",
         note: "",
-        lead_type: "",
+        lead_type: "New",
         is_converted: false,
         aadhar_no: "",
         address: "",
@@ -110,12 +125,20 @@ export default function AddLead() {
         amount: "",
       });
 
-      if (lead.is_converted) fetchConvertedLeads();
-      // After save, go back to list
-      navigate("/dashboard/leads", { state: { projectId } });
+      if (lead.is_converted) {
+        fetchConvertedLeads();
+        // Go to customers page after creating a customer
+        navigate("/dashboard/customers", { state: { projectId } });
+      } else {
+        // Go to leads page after creating a lead
+        navigate("/dashboard/leads", { state: { projectId } });
+      }
     } catch (error) {
-      console.error("Error saving lead:", error);
-      alert("❌ Failed to save lead. Please try again.");
+      console.error("Error saving:", error);
+      const message = lead.is_converted
+        ? "❌ Failed to create customer. Please try again."
+        : "❌ Failed to save lead. Please try again.";
+      alert(message);
     }
   };
 
@@ -216,9 +239,9 @@ export default function AddLead() {
               value={lead.lead_type}
               onChange={handleChange}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              <option value="">Select Lead Type</option>
+              <option value="New">New</option>
               <option value="Cold">Cold</option>
-              <option value="Warm">Moderate</option>
+              <option value="Warm">Warm</option>
               <option value="Hot">Hot</option>
             </select>
           </div>
